@@ -1,7 +1,7 @@
 <div align="center">
 
 # Enterprise IT Asset Manager
-### IT Asset Management & Inventory System
+### Custom Inventory System developed for Hebron Industries
 
 [🇺🇸 English](#-english) | [🇧🇷 Português](#-português)
 
