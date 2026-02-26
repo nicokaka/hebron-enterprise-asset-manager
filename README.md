@@ -1,9 +1,14 @@
 <div align="center">
 
-# Enterprise IT Asset Manager
-### Custom Inventory System developed for Hebron Industries
+# 🏭 Enterprise IT Asset Manager
+### Sistema de Inventário de TI — Hebron Indústria Farmacêutica
 
 [🇺🇸 English](#-english) | [🇧🇷 Português](#-português)
+
+![Java](https://img.shields.io/badge/Java-17+-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-Local_Cache-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Production-brightgreen?style=for-the-badge)
 
 </div>
 
@@ -12,9 +17,9 @@
 > [!IMPORTANT]
 > **🔒 Proprietary Software Notice / Aviso de Software Proprietário**
 >
-> **English:** This repository serves as a **showcase/portfolio entry**. The source code was developed exclusively for **Hebron (Pharmaceutical/Chemical Industry)** and cannot be shared publicly due to Non-Disclosure Agreements (NDA) and security policies. However, the **architecture**, **UI design**, and **logic documentation** are presented here to demonstrate technical capabilities.
+> **English:** This repository serves as a **showcase/portfolio entry**. The source code was developed exclusively for **Hebron (Pharmaceutical/Chemical Industry)** and cannot be shared publicly due to Non-Disclosure Agreements (NDA) and security policies. However, the **architecture**, **UI design**, and **technical documentation** are presented here to demonstrate technical capabilities.
 >
-> **Português:** Este repositório serve como uma **vitrine de portfólio**. O código-fonte foi desenvolvido exclusivamente para a **Hebron (Indústria Farmacêutica/Química)** e não pode ser compartilhado publicamente devido a acordos de confidencialidade (NDA). No entanto, a **arquitetura**, o **design** e a **documentação** são apresentados aqui para demonstrar capacidades técnicas.
+> **Português:** Este repositório serve como uma **vitrine de portfólio**. O código-fonte foi desenvolvido exclusivamente para a **Hebron (Indústria Farmacêutica/Química)** e não pode ser compartilhado publicamente devido a acordos de confidencialidade (NDA). No entanto, a **arquitetura**, o **design** e a **documentação técnica** são apresentados aqui para demonstrar capacidades técnicas.
 
 ---
 
@@ -22,75 +27,134 @@
 
 ## 🇺🇸 English
 
-> **Concept:** A robust **Java** application designed for comprehensive IT asset management, featuring a modern **Swing** interface and real-time synchronization with a **PostgreSQL** cloud database (Supabase).
+> **A robust Java desktop application for comprehensive IT asset management, featuring an offline-first architecture, real-time cloud synchronization, and a modern Swing interface.**
 
 ### 🚀 Overview
-This project serves as a central hub for managing IT infrastructure inventory. **It is currently deployed in production at Hebron's IT Infrastructure**, managing assets across multiple departments.
 
-Unlike simple spreadsheets, this is a **dedicated desktop application** that ensures data integrity, multi-user access control, and detailed history tracking. It streamlines the lifecycle management of computers and equipment: from registration and status tracking to maintenance logs and asset retirement (Soft Delete), all wrapped in a sleek interface powered by **FlatLaf**.
+This project serves as a central hub for managing IT infrastructure inventory. **It is currently deployed in production at Hebron's IT department**, managing assets across multiple departments and locations.
 
-### � Project Structure & Architecture
-Although the source code is private, the project follows a strict **MVC (Model-View-Controller)** architecture to ensure scalability. Here is the actual file structure used in production:
+Unlike spreadsheets, this is a **dedicated desktop application** that ensures data integrity, multi-user access control, and full audit trails — all wrapped in a modern interface powered by **FlatLaf**.
+
+### 🏗️ Architecture
+
+The application follows an **Offline-First** design pattern with **MVC (Model-View-Controller)** architecture:
+
+```
+┌─────────────┐     ┌──────────────┐     ┌──────────────────────────┐
+│   View      │────▶│  Controller  │────▶│        Model             │
+│  (Swing UI) │◀────│              │◀────│  ┌─────────┐ ┌────────┐  │
+│             │     │              │     │  │ SQLite  │ │Supabase│  │
+│ • LoginPanel│     │• Inventory   │     │  │(Offline)│◀▶│(Cloud) │  │
+│ • Dashboard │     │  Controller  │     │  └─────────┘ └────────┘  │
+│ • Sidebar   │     │• Login       │     │                          │
+│ • TopBar    │     │  Controller  │     │  DatabaseHelper          │
+│ • Forms     │     │              │     │  (Singleton Connection)  │
+└─────────────┘     └──────────────┘     └──────────────────────────┘
+```
+
+**Offline-First Strategy:**
+- All operations write to **SQLite** (local) first, ensuring the app works without internet.
+- A background **sync engine** pushes changes to **Supabase (PostgreSQL)** when connectivity is available.
+- Data is pulled from the cloud on startup to keep local cache fresh.
+
+### 📂 Project Structure
 
 ```text
-hebron-enterprise-asset-manager/
-├── lib/                        # External Dependencies (FlatLaf UI, PostgreSQL Driver)
+InventarioHB2/
+├── config.properties               # 🔒 Database credentials (gitignored)
+├── lib/                             # External dependencies
+│   ├── flatlaf-3.7.jar              #    Modern UI theme
+│   ├── postgresql-42.7.7.jar        #    PostgreSQL JDBC driver
+│   ├── sqlite-jdbc-3.48.0.0.jar     #    SQLite JDBC driver
+│   └── slf4j-*.jar                  #    Logging framework
+│
 ├── src/
-│   ├── controller/             # Business Logic Layer (Bridges View and Model)
-│   │   ├── ComputerController.java
-│   │   ├── HistoryController.java
-│   │   ├── SyncController.java
-│   │   └── UserController.java
+│   ├── controller/                  # Business Logic Layer
+│   │   ├── InventoryController.java #    Asset CRUD, search, sync, CSV import/export
+│   │   └── LoginController.java     #    Authentication, user registration
 │   │
-│   ├── database/               # Singleton Connection Logic
-│   │   └── DatabaseConnection.java
+│   ├── model/                       # Data Layer
+│   │   ├── DatabaseHelper.java      #    Dual-database manager (SQLite + PostgreSQL)
+│   │   ├── Computer.java            #    Asset entity (16 fields including lifecycle)
+│   │   ├── HistoryEntry.java        #    Audit log entry
+│   │   └── User.java                #    User entity with hashed passwords
 │   │
-│   ├── model/                  # Data Layer
-│   │   ├── dao/                # Data Access Objects (SQL Operations)
-│   │   │   ├── ComputerDAO.java
-│   │   │   ├── HistoryDAO.java
-│   │   │   └── UserDAO.java
-│   │   └── vo/                 # Value Objects (Entities)
-│   │       ├── Computer.java
-│   │       ├── HistoryLog.java
-│   │       └── User.java
+│   ├── view/                        # Presentation Layer (15 components)
+│   │   ├── MainApp.java             #    Application entry point & frame manager
+│   │   ├── LoginPanel.java          #    Login screen with branding
+│   │   ├── InventoryPanel.java      #    Main inventory table with filters
+│   │   ├── SidebarPanel.java        #    Navigation sidebar with action buttons
+│   │   ├── TopBarPanel.java         #    Search bar, stats, location filter
+│   │   ├── ComputerFormHandler.java #    Asset registration/edit form (16 fields)
+│   │   ├── ComputerTableModel.java  #    JTable data model
+│   │   ├── RecycleBinPanel.java     #    Soft-deleted assets management
+│   │   ├── HistoryWindow.java       #    Audit history viewer
+│   │   ├── UserManagementDialog.java#    User CRUD (admin only)
+│   │   ├── RegisterDialog.java      #    New user registration
+│   │   ├── ModernIcon.java          #    Custom vector icon system (13 icons)
+│   │   └── ...                      #    Additional UI components
 │   │
-│   ├── view/                   # Presentation Layer (Swing UI)
-│   │   ├── DashboardPanel.java
-│   │   ├── InventoryPanel.java
-│   │   ├── LoginFrame.java
-│   │   ├── MainFrame.java
-│   │   └── [Dialogs & Components]...
+│   ├── util/                        # Utilities
+│   │   ├── CSVExporter.java         #    CSV import/export + template generation
+│   │   └── UpdateManager.java       #    Auto-update via GitHub Releases API
 │   │
-│   └── util/                   # Utilities & Security
-│       ├── SessionManager.java # User Session Handling
-│       ├── ThemeManager.java   # FlatLaf Theme Toggle
-│       └── RoundedBorder.java  # Custom UI Components
+│   └── resources/
+│       └── images/                  #    Logos, icons
+│
+├── data_cache/                      # 🔒 Local SQLite database (gitignored)
 └── README.md
 ```
 
 ### ⚙️ Key Features
-*   **Modern UI:** Built with **Java Swing** and **FlatLaf** for a clean, responsive user experience similar to modern web apps.
-*   **Asset Lifecycle Management:**
-    *   **CRUD Operations:** Complete Create, Read, Update, and Delete capabilities for IT assets.
-    *   **Soft Delete:** Safely remove items to a "Trash" bin with restoration capabilities, preventing accidental data loss.
-*   **Advanced Tracking:**
-    *   **History Logs:** Automatically records all user actions (creations, updates, deletions) for full auditability.
-    *   **Dashboard:** Visual metrics for quick insights into asset status (Total, Active, Inactive).
-*   **Cloud Integration:** Direct connection to **Supabase (PostgreSQL)** ensuring data is accessible and secure.
+
+| Category | Feature | Description |
+|----------|---------|-------------|
+| **Asset Management** | CRUD Operations | Full create, read, update, and delete for IT assets (16 tracked fields) |
+| | Soft Delete & Recycle Bin | Safe deletion with full restoration capability |
+| | Activity Status | Track assets as Active/Inactive with visual indicators |
+| **Data Import/Export** | CSV Export | Export full inventory or filtered results to CSV |
+| | CSV Import (Bulk) | Professional import wizard: download template → fill in Excel → import |
+| | Template Generation | Auto-generates CSV template with headers and example data |
+| **Sync & Connectivity** | Offline-First | Full functionality without internet — SQLite local cache |
+| | Cloud Sync | Background sync to Supabase PostgreSQL when online |
+| | Sync Status Indicators | Visual icons showing sync state per asset |
+| **Security** | SHA-256 Password Hashing | Passwords stored as hashes with transparent migration |
+| | Externalized Credentials | Database secrets in `config.properties`, not in code |
+| | Role-Based Access | Admin vs regular user permissions |
+| **Audit & History** | Action Logging | Every create, edit, delete is logged with user, timestamp, and description |
+| | History Export | Export audit logs to CSV |
+| **UI/UX** | Modern Interface | FlatLaf theme with custom vector icons |
+| | Dashboard Stats | Real-time counters: Total, Active, Inactive assets |
+| | Multi-Filter Search | Search + location filter + status filter, combinable |
+| | Auto-Updates | Checks GitHub Releases for new versions on startup |
 
 ### 💻 Tech Stack
-*   **Language:** Java
-*   **GUI Framework:** Swing (with FlatLaf Light Theme)
-*   **Database:** PostgreSQL (via Supabase)
-*   **Connectivity:** JDBC with Singleton connection pattern
-*   **Architecture:** MVC (Model-View-Controller) designed for scalability
-*   **Security:** SQL Injection Prevention using Prepared Statements
 
-### � Screenshots
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Language** | Java 17+ | Core application |
+| **GUI** | Swing + FlatLaf 3.7 | Modern desktop UI |
+| **Local DB** | SQLite 3.48 | Offline cache & primary data store |
+| **Cloud DB** | PostgreSQL (Supabase) | Cloud sync & multi-device support |
+| **Connectivity** | JDBC (Singleton Pattern) | Database connections |
+| **Security** | SHA-256, java.security | Password hashing |
+| **Updates** | GitHub Releases API | Auto-update mechanism |
+| **Architecture** | MVC + Offline-First | Scalability & resilience |
+
+### 🔐 Security Measures
+- **No hardcoded credentials** — database secrets loaded from external `config.properties`
+- **SHA-256 password hashing** with automatic migration from legacy plain-text
+- **SQL injection prevention** using Prepared Statements throughout
+- **Sensitive files gitignored** — `config.properties`, `data_cache/` excluded from VCS
+
+### 📸 Screenshots
 <div align="center">
+
+  <!-- Adicione screenshots aqui -->
+  <!-- <img src="screenshots/login.png" alt="Login Screen" width="400"> -->
   <!-- <img src="screenshots/dashboard.png" alt="Dashboard" width="800"> -->
-  <!-- <img src="screenshots/demo.gif" alt="System Demo" width="800"> -->
+  <!-- <img src="screenshots/import_dialog.png" alt="CSV Import" width="400"> -->
+
 </div>
 
 ---
@@ -99,40 +163,67 @@ hebron-enterprise-asset-manager/
 
 ## 🇧🇷 Português
 
-> **Conceito:** Uma aplicação **Java** robusta projetada para o gerenciamento abrangente de ativos de TI, apresentando uma interface **Swing** moderna e sincronização em tempo real com um banco de dados **PostgreSQL** na nuvem (Supabase).
+> **Uma aplicação desktop Java robusta para gerenciamento completo de ativos de TI, com arquitetura offline-first, sincronização em tempo real com a nuvem e interface Swing moderna.**
 
 ### 🚀 Resumo
-Este projeto serve como um hub central para o gerenciamento do inventário de infraestrutura de TI. **Atualmente está implantado em produção na Infraestrutura de TI da Hebron**, gerenciando ativos em múltiplos departamentos.
 
-Diferente de planilhas simples, esta é uma **aplicação desktop dedicada** que garante a integridade dos dados, controle de acesso multiusuário e rastreamento detalhado do histórico. Ele otimiza o gerenciamento do ciclo de vida de computadores e equipamentos: desde o registro e rastreamento de status até logs de manutenção e baixa de ativos (Soft Delete).
+Este projeto serve como hub central para o gerenciamento do inventário de infraestrutura de TI. **Atualmente está implantado em produção no departamento de TI da Hebron**, gerenciando ativos em múltiplos departamentos e locais.
 
-### 📂 Estrutura do Projeto e Arquitetura
-Embora o código-fonte seja privado, o projeto segue uma rigorosa arquitetura **MVC (Model-View-Controller)**. Veja a estrutura de arquivos real utilizada na seção em inglês acima.
+Diferente de planilhas, esta é uma **aplicação desktop dedicada** que garante integridade dos dados, controle de acesso multiusuário e auditoria completa — tudo em uma interface moderna com **FlatLaf**.
+
+### 🏗️ Arquitetura
+
+A aplicação segue o padrão **Offline-First** com arquitetura **MVC (Model-View-Controller)**:
+
+- **Offline-First:** Todas as operações gravam primeiro no **SQLite** (local), garantindo funcionamento sem internet.
+- **Sync em Background:** Um motor de sincronização envia alterações ao **Supabase (PostgreSQL)** quando há conectividade.
+- **Dados frescos:** O cache local é atualizado com dados da nuvem ao iniciar a aplicação.
+
+Consulte a [seção em inglês](#-project-structure) acima para a estrutura completa de arquivos.
 
 ### ⚙️ Funcionalidades Principais
-*   **UI Moderna:** Construída com **Java Swing** e **FlatLaf** para uma experiência de usuário limpa e responsiva.
-*   **Gerenciamento do Ciclo de Vida do Ativo:**
-    *   **Operações CRUD:** Capacidades completas de Criação, Leitura, Atualização e Exclusão para ativos de TI.
-    *   **Soft Delete:** Remove itens com segurança para uma "Lixeira" com capacidade de restauração, prevenindo perda acidental de dados.
-*   **Rastreamento Avançado:**
-    *   **Logs de Histórico:** Registra automaticamente todas as ações dos usuários para auditoria completa.
-    *   **Dashboard:** Métricas visuais para insights rápidos sobre o status dos ativos.
-*   **Integração em Nuvem:** Conexão direta com **Supabase (PostgreSQL)** garantindo que os dados estejam acessíveis e seguros.
+
+| Categoria | Funcionalidade | Descrição |
+|-----------|---------------|-----------|
+| **Gestão de Ativos** | Operações CRUD | Criação, leitura, atualização e exclusão completa (16 campos rastreados) |
+| | Soft Delete e Lixeira | Exclusão segura com restauração completa |
+| | Status de Atividade | Rastreamento Ativo/Inativo com indicadores visuais |
+| **Importação/Exportação** | Exportar CSV | Exporta inventário completo ou filtrado para CSV |
+| | Importar CSV (em lote) | Wizard profissional: baixar modelo → preencher no Excel → importar |
+| | Geração de Template | Gera modelo CSV com cabeçalhos e dados de exemplo |
+| **Sync e Conectividade** | Offline-First | Funcionalidade total sem internet — cache local SQLite |
+| | Sync com Nuvem | Sincronização em background com Supabase PostgreSQL |
+| **Segurança** | Hash SHA-256 | Senhas armazenadas como hash com migração transparente |
+| | Credenciais Externalizadas | Segredos do banco em `config.properties`, não no código |
+| | Controle de Acesso | Permissões diferenciadas: admin vs usuário comum |
+| **Auditoria** | Log de Ações | Toda criação, edição e exclusão é registrada com usuário, data/hora e descrição |
+| **UI/UX** | Interface Moderna | Tema FlatLaf com ícones vetoriais customizados |
+| | Dashboard | Contadores em tempo real: Total, Ativos, Inativos |
+| | Busca Multi-Filtro | Pesquisa + filtro de local + filtro de status, combináveis |
+| | Auto-Atualização | Verifica novas versões via GitHub Releases API |
 
 ### 💻 Tecnologias
-*   **Linguagem:** Java
-*   **Framework GUI:** Swing (com Tema FlatLaf Light)
-*   **Banco de Dados:** PostgreSQL (via Supabase)
-*   **Conectividade:** JDBC com padrão de conexão Singleton
-*   **Arquitetura:** MVC (Model-View-Controller) projetada para escalabilidade
-*   **Segurança:** Prevenção contra SQL Injection usando Prepared Statements
+
+| Camada | Tecnologia | Finalidade |
+|--------|-----------|------------|
+| **Linguagem** | Java 17+ | Aplicação principal |
+| **GUI** | Swing + FlatLaf 3.7 | Interface desktop moderna |
+| **BD Local** | SQLite 3.48 | Cache offline e armazenamento primário |
+| **BD Nuvem** | PostgreSQL (Supabase) | Sincronização e suporte multi-dispositivo |
+| **Conectividade** | JDBC (Padrão Singleton) | Conexões de banco de dados |
+| **Segurança** | SHA-256, java.security | Hashing de senhas |
+| **Atualizações** | GitHub Releases API | Mecanismo de auto-atualização |
+| **Arquitetura** | MVC + Offline-First | Escalabilidade e resiliência |
+
+---
 
 <div align="center">
 
-**Developed by Nícolas Oliveira de Araújo (nicokaka)**
+**Developed by Nícolas Oliveira de Araújo**
 <br>
-IT Infrastructure Professional & Developer
+IT Infrastructure Professional & Developer @ Hebron
 <br>
-[LinkedIn Profile](SEU_LINK_DO_LINKEDIN_AQUI)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Profile-0A66C2?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/idogmal/)
+[![GitHub](https://img.shields.io/badge/GitHub-idogmal-181717?style=flat-square&logo=github)](https://github.com/idogmal)
 
 </div>
