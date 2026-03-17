@@ -56,6 +56,7 @@ The application follows an **Offline-First** design pattern with **MVC (Model-Vi
 - All operations write to **SQLite** (local) first, ensuring the app works without internet.
 - A background **sync engine** pushes changes to **Supabase (PostgreSQL)** when connectivity is available.
 - Data is pulled from the cloud on startup to keep local cache fresh.
+- Restored backup data is kept **sync-blocked until manual reconciliation**, preventing accidental duplicate uploads to the cloud.
 
 ### 📂 Project Structure
 
@@ -115,10 +116,11 @@ InventarioHB2/
 | **Data Import/Export** | CSV Export | Export full inventory or filtered results to CSV |
 | | CSV Import (Bulk) | Professional import wizard: download template → fill in Excel → import |
 | | Template Generation | Auto-generates CSV template with headers and example data |
+| | Safe Restore Guard | Restored local backups require explicit reconciliation before cloud sync is allowed |
 | **Sync & Connectivity** | Offline-First | Full functionality without internet — SQLite local cache |
 | | Cloud Sync | Background sync to Supabase PostgreSQL when online |
 | | Sync Status Indicators | Visual icons showing sync state per asset |
-| **Security** | SHA-256 Password Hashing | Passwords stored as hashes with transparent migration |
+| **Security** | PBKDF2 Password Hashing | New passwords use PBKDF2 and legacy SHA-256/plain-text entries are migrated transparently |
 | | Externalized Credentials | Database secrets in `config.properties`, not in code |
 | | Role-Based Access | Admin vs regular user permissions |
 | **Audit & History** | Action Logging | Every create, edit, delete is logged with user, timestamp, and description |
@@ -137,14 +139,15 @@ InventarioHB2/
 | **Local DB** | SQLite 3.48 | Offline cache & primary data store |
 | **Cloud DB** | PostgreSQL (Supabase) | Cloud sync & multi-device support |
 | **Connectivity** | JDBC (Singleton Pattern) | Database connections |
-| **Security** | SHA-256, java.security | Password hashing |
+| **Security** | PBKDF2, SHA-256 legacy migration, java.security | Password hashing and migration |
 | **Updates** | GitHub Releases API | Auto-update mechanism |
 | **Architecture** | MVC + Offline-First | Scalability & resilience |
 
 ### 🔐 Security Measures
 - **No hardcoded credentials** — database secrets loaded from external `config.properties`
-- **SHA-256 password hashing** with automatic migration from legacy plain-text
+- **PBKDF2 password hashing** for current passwords, with automatic migration from legacy SHA-256/plain-text
 - **SQL injection prevention** using Prepared Statements throughout
+- **Restore safety guard** — restored local backups block synchronization until manual reconciliation, reducing duplicate remote records
 - **Sensitive files gitignored** — `config.properties`, `data_cache/` excluded from VCS
 
 ### 📸 Screenshots
@@ -178,6 +181,7 @@ A aplicação segue o padrão **Offline-First** com arquitetura **MVC (Model-Vie
 - **Offline-First:** Todas as operações gravam primeiro no **SQLite** (local), garantindo funcionamento sem internet.
 - **Sync em Background:** Um motor de sincronização envia alterações ao **Supabase (PostgreSQL)** quando há conectividade.
 - **Dados frescos:** O cache local é atualizado com dados da nuvem ao iniciar a aplicação.
+- **Restore protegido:** bases restauradas a partir de backup ficam bloqueadas para sincronização até reconciliação manual, evitando duplicações na nuvem.
 
 Consulte a [seção em inglês](#-project-structure) acima para a estrutura completa de arquivos.
 
@@ -191,9 +195,10 @@ Consulte a [seção em inglês](#-project-structure) acima para a estrutura comp
 | **Importação/Exportação** | Exportar CSV | Exporta inventário completo ou filtrado para CSV |
 | | Importar CSV (em lote) | Wizard profissional: baixar modelo → preencher no Excel → importar |
 | | Geração de Template | Gera modelo CSV com cabeçalhos e dados de exemplo |
+| | Restore com Proteção | Backups restaurados exigem reconciliação explícita antes de sincronizar com a nuvem |
 | **Sync e Conectividade** | Offline-First | Funcionalidade total sem internet — cache local SQLite |
 | | Sync com Nuvem | Sincronização em background com Supabase PostgreSQL |
-| **Segurança** | Hash SHA-256 | Senhas armazenadas como hash com migração transparente |
+| **Segurança** | Hash PBKDF2 | Novas senhas usam PBKDF2 e credenciais legadas são migradas de forma transparente |
 | | Credenciais Externalizadas | Segredos do banco em `config.properties`, não no código |
 | | Controle de Acesso | Permissões diferenciadas: admin vs usuário comum |
 | **Auditoria** | Log de Ações | Toda criação, edição e exclusão é registrada com usuário, data/hora e descrição |
@@ -211,7 +216,7 @@ Consulte a [seção em inglês](#-project-structure) acima para a estrutura comp
 | **BD Local** | SQLite 3.48 | Cache offline e armazenamento primário |
 | **BD Nuvem** | PostgreSQL (Supabase) | Sincronização e suporte multi-dispositivo |
 | **Conectividade** | JDBC (Padrão Singleton) | Conexões de banco de dados |
-| **Segurança** | SHA-256, java.security | Hashing de senhas |
+| **Segurança** | PBKDF2, migração legada de SHA-256, java.security | Hashing e migração de senhas |
 | **Atualizações** | GitHub Releases API | Mecanismo de auto-atualização |
 | **Arquitetura** | MVC + Offline-First | Escalabilidade e resiliência |
 
